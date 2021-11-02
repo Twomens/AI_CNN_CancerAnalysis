@@ -22,23 +22,23 @@ def make_dataset(root, mode):
     items = []
 
     if mode == 'train':
-        train_img_path = 'train\Img' # os.path.join(root, 'train', 'Img')
-        train_mask_path = 'train\GT' # os.path.join(root, 'train', 'GT')
+        train_img_path = os.path.join(root, 'train', 'Img')#creer le path /root/train/Img
+        train_mask_path = os.path.join(root, 'train', 'GT')
 
-        images = os.listdir(train_img_path)
+        images = os.listdir(train_img_path)#le noms de fichiers de toutes les images
         labels = os.listdir(train_mask_path)
 
-        images.sort()
+        images.sort()#les mets dans l'ordre
         labels.sort()
 
-        for it_im, it_gt in zip(images, labels):
+        for it_im, it_gt in zip(images, labels):#item liste -> ('chemin/image/spécifique', 'chemin/mask/correspondant')
             item = (os.path.join(train_img_path, it_im), os.path.join(train_mask_path, it_gt))
             items.append(item)
 
 
     elif mode == 'val':
-        val_img_path = 'val\Img' # os.path.join(root, 'val', 'Img')
-        val_mask_path = 'val\GT' # os.path.join(root, 'val', 'GT')
+        val_img_path = os.path.join(root, 'val', 'Img')
+        val_mask_path = os.path.join(root, 'val', 'GT')
 
         images = os.listdir(val_img_path)
         labels = os.listdir(val_mask_path)
@@ -76,18 +76,18 @@ class MedicalImageDataset(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        self.root_dir = root_dir
-        self.transform = transform
-        self.mask_transform = mask_transform
+        self.root_dir = root_dir#chemin de base
+        self.transform = transform #met en tensor (fonction)
+        self.mask_transform = mask_transform#idem
         self.imgs = make_dataset(root_dir, mode)
-        self.augmentation = augment
-        self.equalize = equalize
-        self.mode = mode
+        self.augmentation = augment#si besoin d'augmenter le dataset
+        self.equalize = equalize#si besoin de equalize
+        self.mode = mode#train / val
 
-    def __len__(self):
+    def __len__(self):#retourne la longeur du dataset
         return len(self.imgs)
 
-    def augment(self, img, mask):
+    def augment(self, img, mask):#operations sur l'image, augmente le nombre de données (aléatoire) 
         if random() > 0.5:
             img = ImageOps.flip(img)
             mask = ImageOps.flip(mask)
@@ -100,18 +100,18 @@ class MedicalImageDataset(Dataset):
             mask = mask.rotate(angle)
         return img, mask
 
-    def __getitem__(self, index):
+    def __getitem__(self, index):#retourne liste avec image, mask et chemin de l'image
         img_path, mask_path = self.imgs[index]
         img = Image.open(img_path)
-        mask = Image.open(mask_path).convert('L')
+        mask = Image.open(mask_path).convert('L')#convertie en grayscale, 1 channel, entre 0 et 1
 
-        if self.equalize:
+        if self.equalize:# ? non linea mapping uniform distribution of grayscale values
             img = ImageOps.equalize(img)
 
-        if self.augmentation:
+        if self.augmentation:#augmente nombre de donnée, à faire plus tard
             img, mask = self.augment(img, mask)
 
-        if self.transform:
+        if self.transform:#met en tensor
             img = self.transform(img)
             mask = self.mask_transform(mask)
 

@@ -14,7 +14,7 @@ def to_var(x):
         x = x.cuda()
     return Variable(x)
 
-
+#les classes du mask sont [0.0000, 0.3333, 0.6667, 1.0000] la fonction la rend ces classes sous la forme 0,1,2,3
 def getTargetSegmentation(batch):
     # input is 1-channel of values between 0 and 1
     # values are as follows : 0, 0.33333334, 0.6666667 and 0.94117647
@@ -23,6 +23,7 @@ def getTargetSegmentation(batch):
     denom = 0.33333334 # use for ACDC this value
     return (batch / denom).round().long().squeeze()
 
+#fait une inference, utilisé pour la val loss pk pas de backprop
 def inference(net, img_batch, modelName, epoch):
     total = len(img_batch)
     net.eval()

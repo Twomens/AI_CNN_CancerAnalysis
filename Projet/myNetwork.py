@@ -28,7 +28,59 @@ class thomasNet(nn.Module):
         output = F.log_softmax(x, dim=1)
         return output
 
-#__________________Hadrian Network__________________
+#__________________Hadrien Network__________________
+
+def conv_layer(chan_in, chan_out, conv_ker, conv_pad):
+    layer = nn.Sequential(
+        nn.Conv2d(chan_in, chan_out, conv_ker, padding=conv_pad),
+        nn.BatchNorm2d(chan_out),
+        nn.ReLU()
+    )
+    return layer
+
+class H_SegNet(nn.Module):
+    def __init__(self):
+        super(H_SegNet, self).__init__()#?
+        
+        ### essaye de Segnet
+
+        ## VGG architecture without fully connected
+
+        self.conv_layer1 = conv_layer(1,64,3,1)
+        self.conv_layer2 = conv_layer(64,128,3,1)
+        self.conv_layer3 = conv_layer(128,256,3,1)
+        self.conv_layer4 = conv_layer(256,512,3,1)
+
+        ## Deconv architecture
+
+        self.Dconv_layer1 = conv_layer(512,256,3,1)
+        self.Dconv_layer2 = conv_layer(256,128,3,1)
+        self.Dconv_layer3 = conv_layer(128,64,3,1)
+        self.Dconv_layer4 = conv_layer(64,4,3,1)
+
+
+
+    def forward(self,x):
+
+        x, id1 = F.max_pool2d(self.conv_layer1(x), kernel_size=2, stride=2, return_indices=True)
+
+        x, id2 = F.max_pool2d(self.conv_layer2(x), kernel_size=2, stride=2, return_indices=True)
+
+        x, id3 = F.max_pool2d(self.conv_layer3(x), kernel_size=2, stride=2, return_indices=True)
+
+        x, id4 = F.max_pool2d(self.conv_layer4(x), kernel_size=2, stride=2, return_indices=True)
+
+        x = self.Dconv_layer1(F.max_unpool2d(x, id4, kernel_size=2, stride=2))
+
+        x = self.Dconv_layer2(F.max_unpool2d(x, id3, kernel_size=2, stride=2))
+
+        x = self.Dconv_layer3(F.max_unpool2d(x, id2, kernel_size=2, stride=2))
+
+        x = self.Dconv_layer4(F.max_unpool2d(x, id1, kernel_size=2, stride=2))
+
+        x = F.softmax(x, dim=1)
+
+        return x
 
 
 #__________________Benjamin Network__________________
