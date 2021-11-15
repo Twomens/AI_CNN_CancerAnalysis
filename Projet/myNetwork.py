@@ -83,6 +83,21 @@ class H_SegNet(nn.Module):
         return x
 
 
+class H_small(nn.Module):
+    def __init__(self):
+        super(H_small, self).__init__()
+        self.conv_layer1 = conv_layer(1,10,3,1)
+        self.Dconv_layer1 = conv_layer(10,4,3,1)
+
+    def forward(self,x):
+        x, id1 = F.max_pool2d(self.conv_layer1(x), kernel_size=2, stride=2, return_indices=True)
+        x = self.Dconv_layer1(F.max_unpool2d(x, id1, kernel_size=2, stride=2))
+        x = F.softmax(x, dim=1)
+        return x
+
+
+
+
 #__________________Benjamin Network__________________
 
 
