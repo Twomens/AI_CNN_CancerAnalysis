@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from progressBar import printProgressBar
-from myNetwork import H_SegNet, H_small
+from myNetwork import H_SegNet, H_small, H_Unet
 
 import medicalDataLoader
 import argparse
@@ -72,8 +72,8 @@ def runTraining(args):
     #### Create your own model #####
 
     #net = H_SegNet()
-    net = H_small()
-
+    #net = H_small()
+    net = H_Unet()
 
     print(" Model Name: {}".format(args.modelName))
 

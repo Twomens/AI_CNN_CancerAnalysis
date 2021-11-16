@@ -98,6 +98,77 @@ class H_small(nn.Module):
 
 
 
+class H_Unet(nn.Module):
+    def __init__(self):
+        super(H_Unet,self).__init__()
+        
+        features = 32
+
+        self.encoder11 = conv_layer(1,features,3,1)
+        self.encoder12 = conv_layer(features, features, 3, 1)
+
+        self.encoder21 = conv_layer(features,features * 2,3,1)
+        self.encoder22 = conv_layer(features * 2, features * 2, 3, 1)
+
+        self.encoder31 = conv_layer(features * 2,features * 4,3,1)
+        self.encoder32 = conv_layer(features * 4, features * 4, 3, 1)
+
+        self.encoder41 = conv_layer(features * 4,features * 8,3,1)
+        self.encoder42 = conv_layer(features * 8, features * 8, 3, 1)
+
+        self.bottleneck1 = conv_layer(features * 8, features * 16, 3, 1)
+        self.bottleneck2 = conv_layer(features * 16, features * 16, 3, 1)
+
+        self.upconv4 = nn.ConvTranspose2d(features * 16, features * 8, kernel_size=2, stride=2)#upsampling
+        self.decoder41 = conv_layer(features * 16, features * 8, 3, 1)# features 16 parce que concat, 8 * 2
+        self.decoder42 = conv_layer(features * 8, features * 8, 3, 1)
+
+        self.upconv3 = nn.ConvTranspose2d(features * 8, features * 4, kernel_size=2, stride=2)
+        self.decoder31 = conv_layer(features * 8, features * 4, 3, 1)
+        self.decoder32 = conv_layer(features * 4, features * 4, 3, 1)
+
+        self.upconv2 = nn.ConvTranspose2d(features * 4, features * 2, kernel_size=2, stride=2)
+        self.decoder21 = conv_layer(features * 4, features * 2, 3, 1)
+        self.decoder22 = conv_layer(features * 2, features * 2, 3, 1)
+
+        self.upconv1 = nn.ConvTranspose2d(features * 2, features, kernel_size=2, stride=2)
+        self.decoder11 = conv_layer(features * 2, features, 3, 1)
+        self.decoder12 = conv_layer(features, features, 3, 1)
+
+        self.conv = nn.Conv2d(features, 4, 1)
+
+
+    def forward(self, x):
+
+        enc1 = self.encoder12(self.encoder11(x))
+        enc2 = self.encoder22(self.encoder21(F.max_pool2d(enc1,kernel_size=2, stride=2)))
+        enc3 = self.encoder32(self.encoder31(F.max_pool2d(enc2,kernel_size=2, stride=2)))
+        enc4 = self.encoder42(self.encoder41(F.max_pool2d(enc3,kernel_size=2, stride=2)))
+
+        bottleneck = self.bottleneck2(self.bottleneck1(F.max_pool2d(enc4,kernel_size=2, stride=2)))
+
+        dec4 = self.upconv4(bottleneck)
+        dec4 = torch.cat((dec4, enc4), dim=1)
+        dec4 = self.decoder42(self.decoder41(dec4))
+
+        dec3 = self.upconv3(dec4)
+        dec3 = torch.cat((dec3, enc3), dim=1)
+        dec3 = self.decoder32(self.decoder31(dec3))
+
+        dec2 = self.upconv2(dec3)
+        dec2 = torch.cat((dec2, enc2), dim=1)
+        dec2 = self.decoder22(self.decoder21(dec2))
+
+        dec1 = self.upconv1(dec2)
+        dec1 = torch.cat((dec1, enc1), dim=1)
+        dec1 = self.decoder12(self.decoder11(dec1))
+
+        logits = self.conv(dec1)
+
+        return F.softmax(logits, dim=1)
+
+
+
 #__________________Benjamin Network__________________
 
 
