@@ -116,7 +116,7 @@ def runTraining(args):
             images = to_var(images)
 
             ################### Train ###################
-            #-- The CNN makes its predictions (forward pass)
+            #-- The CNN makes its predictions (forward pass) logits
             net_predictions = net(images)
 
             #-- Compute the loss --#

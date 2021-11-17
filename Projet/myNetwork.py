@@ -165,7 +165,8 @@ class H_Unet(nn.Module):
 
         logits = self.conv(dec1)
 
-        return F.softmax(logits, dim=1)
+        #return F.softmax(logits, dim=1)
+        return logits
 
 
 
