@@ -74,8 +74,10 @@ def runTraining(args):
     net = thomasUNet()
 
 
+    #net = H_SegNet()
     #net = H_small()
     net = H_Unet()
+
     print(" Model Name: {}".format(args.modelName))
 
     print("Total params: {0:,}".format(sum(p.numel() for p in net.parameters() if p.requires_grad)))
@@ -157,11 +159,13 @@ def runTraining(args):
         
         if(loss_val < Best_loss_val):# < pk cross entropy
 
-            os.makedirs('./models/' + args.modelName)
+            if not os.path.exists('./models/' + args.modelName):
                 os.makedirs('./models/' + args.modelName)
 
-        torch.save(net.state_dict(), './models/' + args.modelName + '/' + str(i) + '_Epoch')
+            torch.save(net.state_dict(), './models/' + args.modelName + '/' + str(i) + '_Epoch')#save que le meilleur
 
+            ## besoin de system pour ce rappeler de la meilleur epoch et sauvegarder que si meilleur
+            Best_loss_val = loss_val
             BestEpoch = i
 
         print("###                                                       ###")
