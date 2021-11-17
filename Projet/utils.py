@@ -49,3 +49,7 @@ def inference(net, img_batch, modelName, epoch):
     losses = np.asarray(losses)
 
     return losses.mean()
+
+
+#class DiceLoss(nn.Module):
+#    def

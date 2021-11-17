@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from progressBar import printProgressBar
-from myNetwork import H_SegNet, thomasNet, thomasUNet
+from myNetwork import H_SegNet, thomasNet, thomasUNet,H_small, H_Unet
 
 import medicalDataLoader
 import argparse
@@ -67,13 +67,15 @@ def runTraining(args):
 
     # Initialize
     num_classes = args.num_classes
-
+    
     print("~~~~~~~~~~~ Creating the CNN model ~~~~~~~~~~")
     #### Create your own model #####
 
     net = thomasUNet()
 
 
+    #net = H_small()
+    net = H_Unet()
     print(" Model Name: {}".format(args.modelName))
 
     print("Total params: {0:,}".format(sum(p.numel() for p in net.parameters() if p.requires_grad)))
@@ -115,7 +117,7 @@ def runTraining(args):
             images = to_var(images)
 
             ################### Train ###################
-            #-- The CNN makes its predictions (forward pass)
+            #-- The CNN makes its predictions (forward pass) logits
             net_predictions = net(images)
 
             #-- Compute the loss --#
@@ -147,24 +149,26 @@ def runTraining(args):
 
 
         np.save(os.path.join(directory, 'Losses.npy'), lossTotalTraining)
-        np.save(os.path.join(directory, 'Losses_val.npy'), loss_val)#ajouter la val loss
+        np.save(os.path.join(directory, 'Losses_val.npy'), lossTotalValidation)#ajouter la val loss
 
         ### Save latest model ####
 
         #### Jose-TIP: Is it the best one??? #### On doit l'ajouter que si la loss (ou val_loss) de ce model est plus petite que l'epoch precedente
+        
+        if(loss_val < Best_loss_val):# < pk cross entropy
 
-        if not os.path.exists('./models/' + args.modelName):
             os.makedirs('./models/' + args.modelName)
+                os.makedirs('./models/' + args.modelName)
 
         torch.save(net.state_dict(), './models/' + args.modelName + '/' + str(i) + '_Epoch')
 
-        ## besoin de system pour ce rappeler de la meilleur epoch et sauvegarder que si meilleur
+            BestEpoch = i
 
         print("###                                                       ###")
         print("###  [VAL]  Best Loss : {:.4f} at epoch {}  ###".format(Best_loss_val, BestEpoch))
         print("###                                                       ###")
 
-        if i % (BestEpoch + 100) == 0 and i>0: #scheduler un peu chelou à changer
+        if i % (BestEpoch + 100) == 0 and i>0: #si  ca fait 100 epoch qu'on à pas d'amelioration baisser le lr
             for param_group in optimizer.param_groups:
                 lr = lr*0.5
                 param_group['lr'] = lr
