@@ -9,6 +9,7 @@ class params():
     net = None
 
     def __init__(whoseConf,self):
+        user = whoseConf.lower()
         if(whoseConf.lower() == 'thomas'):
             print("Setting Thomas configuration")
             setParamThomas()

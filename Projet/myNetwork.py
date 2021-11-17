@@ -7,26 +7,191 @@ import pdb
 #__________________Global Network__________________
 
 #__________________Thomas Network__________________
+
+#__from nikhilroxtomar__
+""" Convolutional block:
+    It follows a two 3x3 convolutional layer, each followed by a batch normalization and a relu activation.
+"""
+
+class conv_block(nn.Module):
+    def __init__(self, in_c, out_c):
+        super().__init__()
+
+        self.conv1 = nn.Conv2d(in_c, out_c, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(out_c)
+
+        self.conv2 = nn.Conv2d(out_c, out_c, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(out_c)
+
+        self.relu = nn.ReLU()
+
+    def forward(self, inputs):
+        x = self.conv1(inputs)
+        x = self.bn1(x)
+        x = self.relu(x)
+
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.relu(x)
+
+        return x
+""" Encoder block:
+    It consists of an conv_block followed by a max pooling.
+    Here the number of filters doubles and the height and width half after every block.
+"""
+class encoder_block(nn.Module):
+    def __init__(self, in_c, out_c):
+        super().__init__()
+
+        self.conv = conv_block(in_c, out_c)
+        self.pool = nn.MaxPool2d((2, 2))
+
+    def forward(self, inputs):
+        x = self.conv(inputs)
+        p = self.pool(x)
+
+        return x, p
+
+""" Decoder block:
+    The decoder block begins with a transpose convolution, followed by a concatenation with the skip
+    connection from the encoder block. Next comes the conv_block.
+    Here the number filters decreases by half and the height and width doubles.
+"""
+class decoder_block(nn.Module):
+    def __init__(self, in_c, out_c):
+        super().__init__()
+
+        self.up = nn.ConvTranspose2d(in_c, out_c, kernel_size=2, stride=2, padding=0)
+        self.conv = conv_block(out_c+out_c, out_c)
+
+    def forward(self, inputs, skip):
+        x = self.up(inputs)
+        x = torch.cat([x, skip], axis=1)
+        x = self.conv(x)
+
+        return x
+#__end of nikhilroxtomar__
+
+
+class thomasUNet(nn.Module):
+    def __init__(self):
+        super(thomasUNet, self).__init__()
+
+        """ Encoder """
+        self.e1 = encoder_block(1, 64)
+        self.e2 = encoder_block(64, 128)
+        self.e3 = encoder_block(128, 256)
+        self.e4 = encoder_block(256, 512)
+
+        """ Bottleneck """
+        self.b = conv_block(512, 1024)
+
+        """ Decoder """
+        self.d1 = decoder_block(1024, 512)
+        self.d2 = decoder_block(512, 256)
+        self.d3 = decoder_block(256, 128)
+        self.d4 = decoder_block(128, 64)
+
+        """ Classifier """
+        self.outputs = nn.Conv2d(64, 4, kernel_size=1, padding=0)
+
+    def forward(self, inputs):
+        """ Encoder """
+        s1, p1 = self.e1(inputs)
+        s2, p2 = self.e2(p1)
+        s3, p3 = self.e3(p2)
+        s4, p4 = self.e4(p3)
+
+        """ Bottleneck """
+        b = self.b(p4)
+
+        """ Decoder """
+        d1 = self.d1(b, s4)
+        d2 = self.d2(d1, s3)
+        d3 = self.d3(d2, s2)
+        d4 = self.d4(d3, s1)
+
+        """ Classifier """
+        outputs = self.outputs(d4)
+
+        return outputs
+
 class thomasNet(nn.Module):
+
+    # torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True,
+    #                 padding_mode='zeros', device=None, dtype=None)
+    # torch.nn.BatchNorm2d(num_features, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True, device=None,
+    #                      dtype=None)
+    # torch.nn.ReLU(inplace=False)
+
+
     def __init__(self):
         super(thomasNet, self).__init__()
-        self.conv1 = nn.Conv2d(1, 8, 1, 256)
-        self.conv2 = nn.Conv2d(64, 128, 3, 1)
-        self.fc1 = nn.Linear(25088, 1152)  #
-        self.fc2 = nn.Linear(1152, 10)  # (10 classes)
+
+        # INPUT : 256x256
+
+        # CONV 1
+        self.conv1 = nn.Conv2d(1,10,3, padding = 1)
+        self.batch1 = nn.BatchNorm2d(10)
+        self.act1 = nn.ReLU()
+
+        # CONV 2
+        self.conv2 = nn.Conv2d(10,20,3,padding =1)
+        self.batch2 = nn.BatchNorm2d(20)
+        self.act2 = nn.ReLU()
+
+        # CONV 3
+        self.conv3 = nn.Conv2d(20,30,3,padding =1)
+        self.batch3 = nn.BatchNorm2d(30)
+        self.act3 = nn.ReLU()
+
+        # DECONV 4
+        self.conv4 = nn.Conv2d(30,20,3,padding =1)
+        self.batch4 = nn.BatchNorm2d(20)
+        self.act4 = nn.ReLU()
+
+        # DECONV 5
+        self.conv5 = nn.Conv2d(20,10,3,padding =1)
+        self.batch5 = nn.BatchNorm2d(10)
+        self.act5 = nn.ReLU()
+
+        # DECONV 6
+        self.conv6 = nn.Conv2d(10,4,3,padding =1)
+        self.batch6 = nn.BatchNorm2d(4)
+        self.act6 = nn.ReLU()
+
+        # NORMALISATION SOFTMAX
+        self.norm = nn.Softmax()
+
+        # OUTPUT : 256x256
 
     def forward(self, x):
+
         x = self.conv1(x)
-        x = F.relu(x)
+        x = self.batch1(x)
+        x = self.act1(x)
+
         x = self.conv2(x)
-        x = F.relu(x)
-        x = F.max_pool2d(x, 2)
-        x = torch.flatten(x, 1)
-        x = self.fc1(x)
-        x = F.relu(x)
-        x = self.fc2(x)
-        output = F.log_softmax(x, dim=1)
-        return output
+        x = self.batch2(x)
+        x = self.act2(x)
+
+        x = self.conv3(x)
+        x = self.batch3(x)
+        x = self.act3(x)
+
+        x = self.conv4(x)
+        x = self.batch4(x)
+        x = self.act4(x)
+
+        x = self.conv5(x)
+        x = self.batch5(x)
+        x = self.act5(x)
+
+        x = self.conv6(x)
+        x = self.batch6(x)
+        x = self.act6(x)
+
+        return self.norm(x)
 
 #__________________Hadrien Network__________________
 

@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from progressBar import printProgressBar
-from myNetwork import H_SegNet
+from myNetwork import H_SegNet, thomasNet, thomasUNet
 
 import medicalDataLoader
 import argparse
@@ -71,7 +71,7 @@ def runTraining(args):
     print("~~~~~~~~~~~ Creating the CNN model ~~~~~~~~~~")
     #### Create your own model #####
 
-    net = H_SegNet()
+    net = thomasUNet()
 
 
     print(" Model Name: {}".format(args.modelName))
@@ -119,8 +119,8 @@ def runTraining(args):
             net_predictions = net(images)
 
             #-- Compute the loss --#
-            segmentation_classes = getTargetSegmentation(labels)#pixel par pixel quelle classe entre 0, 1 ,2, 3
-            CE_loss_value = CE_loss(net_predictions, segmentation_classes)#par indices, comment ca marche avec les inputs? pas claire
+            segmentation_classes = getTargetSegmentation(labels) #pixel par pixel quelle classe entre 0, 1 ,2, 3
+            CE_loss_value = CE_loss(net_predictions, segmentation_classes) #par indices, comment ca marche avec les inputs? pas claire
             lossTotal = CE_loss_value
 
             lossTotal.backward()#donne l'erreur, lance la backprop?
