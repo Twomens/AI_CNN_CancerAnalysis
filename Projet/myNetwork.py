@@ -8,7 +8,6 @@ import pdb
 
 #__________________Thomas Network__________________
 
-#__from nikhilroxtomar__
 """ Convolutional block:
     It follows a two 3x3 convolutional layer, each followed by a batch normalization and a relu activation.
 """
@@ -70,7 +69,6 @@ class decoder_block(nn.Module):
         x = self.conv(x)
 
         return x
-#__end of nikhilroxtomar__
 
 
 class thomasUNet(nn.Module):
@@ -135,25 +133,25 @@ class thomasNet(nn.Module):
         self.batch1 = nn.BatchNorm2d(10)
         self.act1 = nn.ReLU()
 
-        # CONV 2
-        self.conv2 = nn.Conv2d(10,20,3,padding =1)
-        self.batch2 = nn.BatchNorm2d(20)
-        self.act2 = nn.ReLU()
-
-        # CONV 3
-        self.conv3 = nn.Conv2d(20,30,3,padding =1)
-        self.batch3 = nn.BatchNorm2d(30)
-        self.act3 = nn.ReLU()
-
-        # DECONV 4
-        self.conv4 = nn.Conv2d(30,20,3,padding =1)
-        self.batch4 = nn.BatchNorm2d(20)
-        self.act4 = nn.ReLU()
-
-        # DECONV 5
-        self.conv5 = nn.Conv2d(20,10,3,padding =1)
-        self.batch5 = nn.BatchNorm2d(10)
-        self.act5 = nn.ReLU()
+        # # CONV 2
+        # self.conv2 = nn.Conv2d(10,20,3,padding =1)
+        # self.batch2 = nn.BatchNorm2d(20)
+        # self.act2 = nn.ReLU()
+        #
+        # # CONV 3
+        # self.conv3 = nn.Conv2d(20,30,3,padding =1)
+        # self.batch3 = nn.BatchNorm2d(30)
+        # self.act3 = nn.ReLU()
+        #
+        # # DECONV 4
+        # self.conv4 = nn.Conv2d(30,20,3,padding =1)
+        # self.batch4 = nn.BatchNorm2d(20)
+        # self.act4 = nn.ReLU()
+        #
+        # # DECONV 5
+        # self.conv5 = nn.Conv2d(20,10,3,padding =1)
+        # self.batch5 = nn.BatchNorm2d(10)
+        # self.act5 = nn.ReLU()
 
         # DECONV 6
         self.conv6 = nn.Conv2d(10,4,3,padding =1)
@@ -171,21 +169,21 @@ class thomasNet(nn.Module):
         x = self.batch1(x)
         x = self.act1(x)
 
-        x = self.conv2(x)
-        x = self.batch2(x)
-        x = self.act2(x)
-
-        x = self.conv3(x)
-        x = self.batch3(x)
-        x = self.act3(x)
-
-        x = self.conv4(x)
-        x = self.batch4(x)
-        x = self.act4(x)
-
-        x = self.conv5(x)
-        x = self.batch5(x)
-        x = self.act5(x)
+        # x = self.conv2(x)
+        # x = self.batch2(x)
+        # x = self.act2(x)
+        #
+        # x = self.conv3(x)
+        # x = self.batch3(x)
+        # x = self.act3(x)
+        #
+        # x = self.conv4(x)
+        # x = self.batch4(x)
+        # x = self.act4(x)
+        #
+        # x = self.conv5(x)
+        # x = self.batch5(x)
+        # x = self.act5(x)
 
         x = self.conv6(x)
         x = self.batch6(x)

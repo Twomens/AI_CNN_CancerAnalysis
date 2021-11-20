@@ -1,14 +1,20 @@
+import time
+
+from ignite.engine import create_supervised_evaluator
+from ignite.metrics import ConfusionMatrix
+from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from progressBar import printProgressBar
-from myNetwork import H_SegNet, thomasNet, thomasUNet,H_small, H_Unet
 
 import medicalDataLoader
 import argparse
+import params
 from utils import *
 
 import random
 import torch
+
 
 from PIL import Image, ImageOps
 
@@ -17,6 +23,20 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def runTraining(args):
+
+    print('Init metrics : ')
+    # ConfusionMatrix(num_classes, average=None, output_transform= < function
+    # ConfusionMatrix. <
+    # lambda >>, device=device(type='cpu'))
+    metrics = {
+        "confusion_matrix": ConfusionMatrix(4),
+    }
+    # evaluator = create_supervised_evaluator(
+    #     model, metrics=metrics, output_transform=lambda x, y, y_pred: (y_pred, y)
+    # )
+
+    #-------- https: // www.kaggle.com / protan / ignite - example----------
+
     print('-' * 40)
     print('~~~~~~~~  Starting the training... ~~~~~~')
     print('-' * 40)
@@ -71,12 +91,7 @@ def runTraining(args):
     print("~~~~~~~~~~~ Creating the CNN model ~~~~~~~~~~")
     #### Create your own model #####
 
-    net = thomasUNet()
-
-
-    #net = H_SegNet()
-    #net = H_small()
-    net = H_Unet()
+    net = args.net#.to(device)
 
     print(" Model Name: {}".format(args.modelName))
 
@@ -103,7 +118,9 @@ def runTraining(args):
     if os.path.exists(directory)==False:
         os.makedirs(directory)
 
+    tTotal = time.time()
     for i in range(epoch):
+        t0 = time.time()
         net.train()
         lossEpoch = []
         num_batches = len(train_loader_full)
@@ -177,15 +194,29 @@ def runTraining(args):
                 lr = lr*0.5
                 param_group['lr'] = lr
                 print(' ----------  New learning Rate: {}'.format(lr))
+        print('Durée apprentissage epoch : ','%.0f h' % ((time.time() - t0)/3600000),'%.0f mins' % (((time.time() - t0)/60000)%60), '%2.0f' % ((time.time() - t0)%60),'s')
+    print('Durée total apprentissage : ', '%.0f h' % ((time.time() - tTotal) / 3600000),
+          '%.0f mins' % (((time.time() - tTotal) / 60000)%60), '%2.0f' % ((time.time() - tTotal)%60), 's')
 
+    plt.plot(lossTotalTraining, label="Training loss")
+    plt.plot(lossTotalValidation, label="Validation loss")
+    plt.xlabel("Epochs")
+    plt.ylabel("Losses")
+    plt.title(args.modelName)
+    plt.legend()
+    plt.show()
+    plt.savefig(os.path.join(directory, 'Plot.png'))
 
 if __name__ == '__main__':
+    params = params.params("thomas") # either thomas, hadrian, marieme, benjamin or empty for default configuration
     parser=argparse.ArgumentParser()
-    parser.add_argument("--modelName",default="Test_Model",type=str)
-    parser.add_argument('--batch_size',default=8,type=int)
-    parser.add_argument('--batch_size_val',default=4,type=int)
+    parser.add_argument('--net',default=params.net,type=float)
+    parser.add_argument("--modelName",default=params.netName,type=str)
+    parser.add_argument('--batch_size',default=params.batchSize,type=int)
+    parser.add_argument('--batch_size_val',default=params.batchSizeVal,type=int)
     parser.add_argument('--num_classes',default=4,type=int)
-    parser.add_argument('--epochs',default=50,type=int)
-    parser.add_argument('--lr',default=0.0001,type=float)
+    parser.add_argument('--epochs',default=params.nbEpochs,type=int)
+    parser.add_argument('--lr',default=params.learningRate,type=float)
     args=parser.parse_args()
+
     runTraining(args)
