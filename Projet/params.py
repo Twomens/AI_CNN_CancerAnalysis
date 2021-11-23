@@ -39,7 +39,7 @@ def setParamGlobal(self):
     self.batchSizeVal = 4
     self.learningRate = 0.0001
     self.nbEpochs = 50
-    self.augmentDataSet = False
+    self.augmentDataSet = False # not implemented yet
     return
 
 #__________________Thomas Config__________________

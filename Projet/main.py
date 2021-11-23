@@ -1,7 +1,9 @@
 import time
 
-from ignite.engine import create_supervised_evaluator
-from ignite.metrics import ConfusionMatrix
+from ignite.engine import Engine, Events
+from ignite.metrics import Accuracy, Loss, RunningAverage, Precision, Recall
+from ignite.handlers import ModelCheckpoint, EarlyStopping
+from ignite.contrib.handlers import ProgressBar
 from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -25,17 +27,9 @@ warnings.filterwarnings("ignore")
 def runTraining(args):
 
     print('Init metrics : ')
-    # ConfusionMatrix(num_classes, average=None, output_transform= < function
-    # ConfusionMatrix. <
-    # lambda >>, device=device(type='cpu'))
-    metrics = {
-        "confusion_matrix": ConfusionMatrix(4),
-    }
-    # evaluator = create_supervised_evaluator(
-    #     model, metrics=metrics, output_transform=lambda x, y, y_pred: (y_pred, y)
-    # )
 
-    #-------- https: // www.kaggle.com / protan / ignite - example----------
+
+    #-------- https://www.kaggle.com/protan/ignite-example ----------
 
     print('-' * 40)
     print('~~~~~~~~  Starting the training... ~~~~~~')
@@ -91,6 +85,7 @@ def runTraining(args):
     print("~~~~~~~~~~~ Creating the CNN model ~~~~~~~~~~")
     #### Create your own model #####
 
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     net = args.net#.to(device)
 
     print(" Model Name: {}".format(args.modelName))
@@ -194,10 +189,13 @@ def runTraining(args):
                 lr = lr*0.5
                 param_group['lr'] = lr
                 print(' ----------  New learning Rate: {}'.format(lr))
-        print('Durée apprentissage epoch : ','%.0f h' % ((time.time() - t0)/3600000),'%.0f mins' % (((time.time() - t0)/60000)%60), '%2.0f' % ((time.time() - t0)%60),'s')
-    print('Durée total apprentissage : ', '%.0f h' % ((time.time() - tTotal) / 3600000),
-          '%.0f mins' % (((time.time() - tTotal) / 60000)%60), '%2.0f' % ((time.time() - tTotal)%60), 's')
+        print('Durée apprentissage epoch : ','%.0f h' % ((time.time() - t0)/3600),
+              '%.0f mins' % (((time.time() - t0)/60)%60), '%2.0f' % ((time.time() - t0)%60),'s')
+    print('Durée total apprentissage : ', '%.0f h' % ((time.time() - tTotal) / 3600),
+          '%.0f mins' % (((time.time() - tTotal) / 60)%60), '%2.0f' % ((time.time() - tTotal)%60), 's')
 
+    # PROBLÈME ARRONDI AUTO A DESACTIVER
+    
     plt.plot(lossTotalTraining, label="Training loss")
     plt.plot(lossTotalValidation, label="Validation loss")
     plt.xlabel("Epochs")
