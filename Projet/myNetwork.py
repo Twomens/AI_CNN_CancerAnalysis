@@ -114,7 +114,7 @@ class thomasUNet(nn.Module):
 
         return outputs
 
-class thomasNet(nn.Module):
+class thomasNet(nn.Module): # essayer avec dilation = 2
 
     # torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True,
     #                 padding_mode='zeros', device=None, dtype=None)

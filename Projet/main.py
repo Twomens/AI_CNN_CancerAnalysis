@@ -1,12 +1,11 @@
 import time
 
-from ignite.engine import Engine, Events
-from ignite.metrics import Accuracy, Loss, RunningAverage, Precision, Recall
-from ignite.handlers import ModelCheckpoint, EarlyStopping
-from ignite.contrib.handlers import ProgressBar
 from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 from torchvision import transforms
+
+from imageDataGenerator import savePNG
+from metrics import confusionMatrix
 from progressBar import printProgressBar
 
 import medicalDataLoader
@@ -16,6 +15,7 @@ from utils import *
 
 import random
 import torch
+
 
 
 from PIL import Image, ImageOps
@@ -57,8 +57,8 @@ def runTraining(args):
                                                       root_dir,
                                                       transform=transform,
                                                       mask_transform=mask_transform,
-                                                      augment=False,
-                                                      equalize=False)
+                                                      augment=args.augmentDataSet,
+                                                      equalize=args.equalize)
 
     train_loader_full = DataLoader(train_set_full,
                               batch_size=batch_size,
@@ -71,13 +71,13 @@ def runTraining(args):
                                                     root_dir,
                                                     transform=transform,
                                                     mask_transform=mask_transform,
-                                                    equalize=False)
+                                                    equalize=args.equalize)
 
     val_loader = DataLoader(val_set,
                             batch_size=batch_size_val,
                             worker_init_fn=np.random.seed(0),
                             num_workers=0,
-                            shuffle=False)
+                            shuffle=args.equalize)
 
     # Initialize
     num_classes = args.num_classes
@@ -139,6 +139,9 @@ def runTraining(args):
             CE_loss_value = CE_loss(net_predictions, segmentation_classes) #par indices, comment ca marche avec les inputs? pas claire
             lossTotal = CE_loss_value
 
+
+            # confusionMatrix(net_predictions,segmentation_classes)
+
             lossTotal.backward()#donne l'erreur, lance la backprop?
             optimizer.step()
 
@@ -157,8 +160,10 @@ def runTraining(args):
 
         printProgressBar(num_batches, num_batches,
                              done="[Training] Epoch: {}, LossG: {:.4f}".format(i,lossEpoch))
-
-        loss_val = inference(net, val_loader, args.modelName, i)#compute la val loss
+        if i == epoch-1:
+            loss_val = inference(net, val_loader, args.modelName, i, True)#compute la val loss
+        else:
+            loss_val = inference(net, val_loader, args.modelName, i, args.savePNGeachEP)  # compute la val loss
         lossTotalValidation.append(loss_val)#save les val loss
 
 
@@ -215,6 +220,9 @@ if __name__ == '__main__':
     parser.add_argument('--num_classes',default=4,type=int)
     parser.add_argument('--epochs',default=params.nbEpochs,type=int)
     parser.add_argument('--lr',default=params.learningRate,type=float)
+    parser.add_argument('--augmentDataSet',default=params.augmentDataSet,type=bool)
+    parser.add_argument('--equalize',default=params.equalize,type=bool)
+    parser.add_argument('--savePNGeachEP',default=params.equalize,type=bool)
     args=parser.parse_args()
 
     runTraining(args)
