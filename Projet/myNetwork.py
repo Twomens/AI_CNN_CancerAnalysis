@@ -336,4 +336,276 @@ class H_Unet(nn.Module):
 #__________________Benjamin Network__________________
 
 
+class AttU_Net(nn.Module):
+    def __init__(self, img_ch=1, output_ch=4):
+        super(AttU_Net, self).__init__()
+
+        n1 = 64
+        filters = [n1, n1 * 2, n1 * 4, n1 * 8, n1 * 16]
+
+        self.Maxpool1 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.Maxpool2 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.Maxpool3 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.Maxpool4 = nn.MaxPool2d(kernel_size=2, stride=2)
+
+        self.Conv1 = conv_block(img_ch, filters[0])
+        self.Conv2 = conv_block(filters[0], filters[1])
+        self.Conv3 = conv_block(filters[1], filters[2])
+        self.Conv4 = conv_block(filters[2], filters[3])
+        self.Conv5 = conv_block(filters[3], filters[4])
+
+        self.Up5 = up_conv(filters[4], filters[3])
+        self.Att5 = Attention_block(F_g=filters[3], F_l=filters[3], F_int=filters[2])
+        self.Up_conv5 = conv_block(filters[4], filters[3])
+
+        self.Up4 = up_conv(filters[3], filters[2])
+        self.Att4 = Attention_block(F_g=filters[2], F_l=filters[2], F_int=filters[1])
+        self.Up_conv4 = conv_block(filters[3], filters[2])
+
+        self.Up3 = up_conv(filters[2], filters[1])
+        self.Att3 = Attention_block(F_g=filters[1], F_l=filters[1], F_int=filters[0])
+        self.Up_conv3 = conv_block(filters[2], filters[1])
+
+        self.Up2 = up_conv(filters[1], filters[0])
+        self.Att2 = Attention_block(F_g=filters[0], F_l=filters[0], F_int=32)
+        self.Up_conv2 = conv_block(filters[1], filters[0])
+
+        self.Conv = nn.Conv2d(filters[0], output_ch, kernel_size=1, stride=1, padding=0)
+
+    def forward(self, x):
+        e1 = self.Conv1(x)
+
+        e2 = self.Maxpool1(e1)
+        e2 = self.Conv2(e2)
+
+        e3 = self.Maxpool2(e2)
+        e3 = self.Conv3(e3)
+
+        e4 = self.Maxpool3(e3)
+        e4 = self.Conv4(e4)
+
+        e5 = self.Maxpool4(e4)
+        e5 = self.Conv5(e5)
+
+        d5 = self.Up5(e5)
+        x4 = self.Att5(g=d5, x=e4)
+        d5 = torch.cat((x4, d5), dim=1)
+        d5 = self.Up_conv5(d5)
+
+        d4 = self.Up4(d5)
+        x3 = self.Att4(g=d4, x=e3)
+        d4 = torch.cat((x3, d4), dim=1)
+        d4 = self.Up_conv4(d4)
+
+        d3 = self.Up3(d4)
+        x2 = self.Att3(g=d3, x=e2)
+        d3 = torch.cat((x2, d3), dim=1)
+        d3 = self.Up_conv3(d3)
+
+        d2 = self.Up2(d3)
+        x1 = self.Att2(g=d2, x=e1)
+        d2 = torch.cat((x1, d2), dim=1)
+        d2 = self.Up_conv2(d2)
+
+        out = self.Conv(d2)
+
+        return out
+
+
+class Attention_block(nn.Module):
+    """
+    Attention Block
+    """
+
+    def __init__(self, F_g, F_l, F_int):
+        super(Attention_block, self).__init__()
+
+        self.W_g = nn.Sequential(
+            nn.Conv2d(F_l, F_int, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(F_int)
+        )
+
+        self.W_x = nn.Sequential(
+            nn.Conv2d(F_g, F_int, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(F_int)
+        )
+
+        self.psi = nn.Sequential(
+            nn.Conv2d(F_int, 1, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.BatchNorm2d(1),
+            nn.Sigmoid()
+        )
+
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, g, x):
+        g1 = self.W_g(g)
+        x1 = self.W_x(x)
+        psi = self.relu(g1 + x1)
+        psi = self.psi(psi)
+        out = x * psi
+        return out
+
+
+class up_conv(nn.Module):
+    """
+    Up Convolution Block
+    """
+    def __init__(self, in_ch, out_ch):
+        super(up_conv, self).__init__()
+        self.up = nn.Sequential(
+            nn.Upsample(scale_factor=2),
+            nn.Conv2d(in_ch, out_ch, kernel_size=3, stride=1, padding=1, bias=True),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True)
+        )
+
+    def forward(self, x):
+        x = self.up(x)
+        return x
+
+class D_AttU(nn.Module):
+    def __init__(self, img_ch=1, output_ch=4):
+        super(D_AttU, self).__init__()
+
+        n1 = 32
+        filters = [n1, n1 * 2, n1 * 4, n1 * 8, n1 * 16]#64 128, 256, 512, 1024
+        #32 64 128 256 512
+
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+
+        ################################# ATTU 1 #############################################
+
+        self.Conv11 = conv_block(img_ch, filters[0])
+        self.Conv12 = conv_block(filters[0], filters[1])
+        self.Conv13 = conv_block(filters[1], filters[2])
+        self.Conv14 = conv_block(filters[2], filters[3])
+        self.Conv15 = conv_block(filters[3], filters[4])
+
+        self.Up15 = up_conv(filters[4], filters[3])
+        self.Att15 = Attention_block(F_g=filters[3], F_l=filters[3], F_int=filters[2])
+        self.Up_conv15 = conv_block(filters[4], filters[3])
+
+        self.Up14 = up_conv(filters[3], filters[2])
+        self.Att14 = Attention_block(F_g=filters[2], F_l=filters[2], F_int=filters[1])
+        self.Up_conv14 = conv_block(filters[3], filters[2])
+
+        self.Up13 = up_conv(filters[2], filters[1])
+        self.Att13 = Attention_block(F_g=filters[1], F_l=filters[1], F_int=filters[0])
+        self.Up_conv13 = conv_block(filters[2], filters[1])
+
+        self.Up12 = up_conv(filters[1], filters[0])
+        self.Att12 = Attention_block(F_g=filters[0], F_l=filters[0], F_int=16)
+        self.Up_conv12 = conv_block(filters[1], filters[0])
+
+        self.Conv1 = nn.Conv2d(filters[0], output_ch, kernel_size=1, stride=1, padding=0)
+
+        ################################# ATTU 2 ################################################
+
+        self.Conv21 = conv_block(output_ch, filters[0])
+        self.Conv22 = conv_block(filters[0], filters[1])
+        self.Conv23 = conv_block(filters[1], filters[2])
+        self.Conv24 = conv_block(filters[2], filters[3])
+        self.Conv25 = conv_block(filters[3], filters[4])
+
+        self.Up25 = up_conv(filters[4], filters[3])
+        self.Att25 = Attention_block(F_g=filters[3], F_l=filters[3], F_int=filters[2])
+        self.Up_conv25 = conv_block(filters[3] * 3, filters[3])
+
+        self.Up24 = up_conv(filters[3], filters[2])
+        self.Att24 = Attention_block(F_g=filters[2], F_l=filters[2], F_int=filters[1])
+        self.Up_conv24 = conv_block(filters[2] * 3, filters[2])
+
+        self.Up23 = up_conv(filters[2], filters[1])
+        self.Att23 = Attention_block(F_g=filters[1], F_l=filters[1], F_int=filters[0])
+        self.Up_conv23 = conv_block(filters[1] * 3, filters[1])
+
+        self.Up22 = up_conv(filters[1], filters[0])
+        self.Att22 = Attention_block(F_g=filters[0], F_l=filters[0], F_int=16)
+        self.Up_conv22 = conv_block(filters[0] * 3, filters[0])
+
+        self.Conv2 = nn.Conv2d(filters[0], output_ch, kernel_size=1, stride=1, padding=0)
+
+
+    def forward(self, x):
+        ############## ATTU 1 ############################
+        e1 = self.Conv11(x)
+
+        e2 = self.pool(e1)
+        e2 = self.Conv12(e2)
+
+        e3 = self.pool(e2)
+        e3 = self.Conv13(e3)
+
+        e4 = self.pool(e3)
+        e4 = self.Conv14(e4)
+
+        e5 = self.pool(e4)
+        e5 = self.Conv15(e5)
+
+        d5 = self.Up15(e5)
+        x4 = self.Att15(g=d5, x=e4)
+        d5 = torch.cat((x4, d5), dim=1)
+        d5 = self.Up_conv15(d5)
+
+        d4 = self.Up14(d5)
+        x3 = self.Att14(g=d4, x=e3)
+        d4 = torch.cat((x3, d4), dim=1)
+        d4 = self.Up_conv14(d4)
+
+        d3 = self.Up13(d4)
+        x2 = self.Att13(g=d3, x=e2)
+        d3 = torch.cat((x2, d3), dim=1)
+        d3 = self.Up_conv13(d3)
+
+        d2 = self.Up12(d3)
+        x1 = self.Att12(g=d2, x=e1)
+        d2 = torch.cat((x1, d2), dim=1)
+        d2 = self.Up_conv12(d2)
+
+        out1 = self.Conv1(d2)
+        x2 = torch.mul(x, out1)
+
+        ####################### ATTU 2 ###############################
+
+        e21 = self.Conv21(x2)
+
+        e22 = self.pool(e21)
+        e22 = self.Conv22(e22)
+
+        e23 = self.pool(e22)
+        e23 = self.Conv23(e23)
+
+        e24 = self.pool(e23)
+        e24 = self.Conv24(e24)
+
+        e25 = self.pool(e24)
+        e25 = self.Conv25(e25)
+
+        d25 = self.Up25(e25)
+        x24 = self.Att25(g=d25, x=e24)
+        d25 = torch.cat((x24, d25, e4), dim=1)
+        d25 = self.Up_conv25(d25)
+
+        d24 = self.Up24(e24)
+        x23 = self.Att24(g=d24, x=e23)
+        d24 = torch.cat((x23, d24, e3), dim=1)
+        d24 = self.Up_conv24(d24)
+
+        d23 = self.Up23(e23)
+        x22 = self.Att23(g=d23, x=e22)
+        d23 = torch.cat((x22, d23, e2), dim=1)
+        d23 = self.Up_conv23(d23)
+
+        d22 = self.Up22(e22)
+        x21 = self.Att22(g=d22, x=e21)
+        d22 = torch.cat((x21, d22, e1), dim=1)
+        d22 = self.Up_conv22(d22)
+
+        out2 = self.Conv2(d22)
+
+        return out2
+
+
 #__________________Marieme Network__________________
+

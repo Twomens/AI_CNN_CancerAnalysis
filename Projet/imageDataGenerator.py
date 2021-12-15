@@ -36,23 +36,3 @@ def transformMCtoSC(tensor):
             # if(image[w][l] != 0):
             #     print('w:',w,' l:',l,' 0:',tensor[0][w][l],' 1:',tensor[1][w][l],' 2:',tensor[2][w][l],' 3:',tensor[3][w][l], ' val : ', image[w][l])
     return image
-
-# # https://pytorch.org/vision/stable/auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py
-# def testImg(tensor):
-#
-#     sem_classes = [
-#         '__background__', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-#         'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
-#         'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
-#     ]
-#     sem_class_to_idx = {cls: idx for (idx, cls) in enumerate(sem_classes)}
-#
-#     normalized_masks = torch.nn.functional.softmax(tensor, dim=1)
-#
-#     dog_and_boat_masks = [
-#         normalized_masks[img_idx, sem_class_to_idx[cls]]
-#         for img_idx in range(batch.shape[0])
-#         for cls in ('dog', 'boat')
-#     ]
-#
-#     show(dog_and_boat_masks)

@@ -52,12 +52,12 @@ def setParamThomas(self):
     # à essayer
     # https: // github.com / deepmind / surface - distance / blob / master / surface_distance_test.py
     self.user = 'thomas'
-    self.net = myNetwork.thomasUNet()
+    self.net = myNetwork.D_AttU()
     self.netName = "Thomas Model, based on U-Net"
     self.batchSize = 32 # ou 8 ? à tester
     self.batchSizeVal = 4
     self.learningRate = 0.001 # essayer d'augmenter la taille du batch et du lr
-    self.nbEpochs = 30 # 30
+    self.nbEpochs = 2 # 30
     self.augmentDataSet = False
     self.equalize = False
     self.savePNGeachEP = True
