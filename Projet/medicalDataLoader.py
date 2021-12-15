@@ -19,11 +19,9 @@ from imageDataGenerator import savePNG
 
 warnings.filterwarnings("ignore")
 
-
 def make_dataset(root, mode):
     assert mode in ['train','val', 'test']
     items = []
-
     if mode == 'train':
         train_img_path = os.path.join(root, 'train', 'Img')#creer le path /root/train/Img
         train_mask_path = os.path.join(root, 'train', 'GT')
@@ -37,7 +35,6 @@ def make_dataset(root, mode):
         for it_im, it_gt in zip(images, labels):#item liste -> ('chemin/image/spécifique', 'chemin/mask/correspondant')
             item = (os.path.join(train_img_path, it_im), os.path.join(train_mask_path, it_gt))
             items.append(item)
-
 
     elif mode == 'val':
         val_img_path = os.path.join(root, 'val', 'Img')

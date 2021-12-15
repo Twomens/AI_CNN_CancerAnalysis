@@ -4,8 +4,6 @@ import numpy as np
 import torch
 from matplotlib import pyplot as plt
 
-
-
 def confusionMatrix(labelsTensor, predsTensor):
     labelsTensor = labelsTensor.view(-1).type(torch.int64)
     predsTensor = predsTensor.view(-1).type(torch.int64)
@@ -21,7 +19,6 @@ def confusionMatrix(labelsTensor, predsTensor):
         tl, pl = p.tolist()
         confusionMatrix[tl, pl] = confusionMatrix[tl, pl] + 1
     return confusionMatrix
-
 
 def batchConfusionMatrix(labelsTensorB, predsTensorB):
     confusionMatrix = torch.zeros(4, 4, dtype=torch.int64)
@@ -92,7 +89,6 @@ def confVector(labelsTensor, predsTensor):
     tn = torch.sum(torch.isnan(confusion_vector)).item()
     fn = torch.sum(confusion_vector == 0).item()
     return torch.tensor([tp,tn,fp,fn]) # conf vector [TP,TN,FP,FN]
-
 
 def f1(confVec):
     return (precision(confVec) * recall(confVec)) / (precision(confVec) + recall(confVec))

@@ -8,7 +8,6 @@ import pdb
 #__________________________________LE MODELE FINAL EST TOUT EN BAS_____________________________________#
 ########################################################################################################
 
-
 #__________________Thomas Network__________________
 
 """ Convolutional block:
@@ -35,7 +34,6 @@ class conv_block(nn.Module):
         x = self.conv2(x)
         x = self.bn2(x)
         x = self.relu(x)
-
         return x
 """ Encoder block:
     It consists of an conv_block followed by a max pooling.
@@ -226,8 +224,6 @@ class H_SegNet(nn.Module):
         self.Dconv_layer3 = conv_layer(128,64,3,1)
         self.Dconv_layer4 = conv_layer(64,4,3,1)
 
-
-
     def forward(self,x):
 
         x, id1 = F.max_pool2d(self.conv_layer1(x), kernel_size=2, stride=2, return_indices=True)
@@ -301,7 +297,6 @@ class H_Unet(nn.Module):
 
         self.conv = nn.Conv2d(features, 4, 1)
 
-
     def forward(self, x):
 
         enc1 = self.encoder12(self.encoder11(x))
@@ -331,7 +326,6 @@ class H_Unet(nn.Module):
 
         #return F.softmax(logits, dim=1)
         return logits
-
 
 def Dconv_layer(chan_in, chan_out, conv_ker, conv_pad,dropout=False, dpr=0.3):
     layer = None
@@ -658,8 +652,6 @@ class AttU_Net(nn.Module):
 
         self.Conv = nn.Conv2d(filters[0], output_ch, kernel_size=1, stride=1, padding=0)
 
-    
-
     def forward(self, x):
 
         e1 = self.Conv1(x)
@@ -704,7 +696,6 @@ class AttU_Net(nn.Module):
 ########################################################################################################
 #____________________________FINAL MODEL : DOUBLE ATTENTION UNET ______________________________________#
 ########################################################################################################
-
 
 class D_AttU(nn.Module):
     def __init__(self, img_ch=1, output_ch=4):
@@ -847,9 +838,3 @@ class D_AttU(nn.Module):
         out2 = self.Conv2(d22)
 
         return out2
-
-
-
-
-
-

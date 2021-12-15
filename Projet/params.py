@@ -13,7 +13,6 @@ class params():
     equalize = False
     savePNGeachEP = False
 
-
     def __init__(self, whoseConf):
         user = whoseConf.lower()
         if(user == 'thomas'):
@@ -21,7 +20,7 @@ class params():
             setParamThomas(self)
         elif(user == 'hadrien'):
             print("Setting Hadrien configuration")
-            setParamHadrian(self)
+            setParamHadrien(self)
         elif (user == 'benjamin'):
             print("Setting Benjamin configuration")
             setParamBenjamin(self)
@@ -50,7 +49,6 @@ def setParamGlobal(self):
 #__________________Thomas Config__________________
 def setParamThomas(self):
     # à essayer
-    # https: // github.com / deepmind / surface - distance / blob / master / surface_distance_test.py
     self.user = 'thomas'
     self.net = myNetwork.D_AttU()
     self.netName = "Thomas Model, based on U-Net"

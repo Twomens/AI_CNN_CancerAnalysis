@@ -30,9 +30,6 @@ def runTraining(args):
 
     print('Init metrics : ')
 
-
-    #-------- https://www.kaggle.com/protan/ignite-example ----------
-
     print('-' * 40)
     print('~~~~~~~~  Starting the training... ~~~~~~')
     print('-' * 40)
@@ -153,8 +150,6 @@ def runTraining(args):
                              prefix="[Training] Epoch: {} ".format(i),
                              length=15,
                              suffix=" Loss: {:.4f}, ".format(lossTotal))
-
-
         lossEpoch = np.asarray(lossEpoch)
         lossEpoch = lossEpoch.mean()#loss final de l'epoch
 
@@ -174,7 +169,7 @@ def runTraining(args):
 
         ### Save latest model ####
         
-        if(loss_val < Best_loss_val):#Sauvegarde le modele si loss plus petit
+        if(loss_val < Best_loss_val): # Sauvegarde le modele si loss plus petit
 
             if not os.path.exists('./models/' + args.modelName):
                 os.makedirs('./models/' + args.modelName)

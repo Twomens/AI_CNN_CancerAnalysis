@@ -2,7 +2,6 @@ import os
 import torch
 from torchvision.utils import save_image
 
-
 def savePNG(tensor, dir, fileName):
     if(not(os.path.exists("Data/val/Pred/"))):
         os.mkdir("Data/val/Pred/")
@@ -17,7 +16,6 @@ def saveBatchPNG(tensors, dir, fileNames):
             savePNG(transformMCtoSC(tensors[i]), dir, os.path.basename(fileNames[i]))
         else:
             savePNG(tensors[i], dir, fileNames[i])
-
 
 # to concatenate prediction classes into one class
 # pue la merde à faire en fonction mé g pa trouvé

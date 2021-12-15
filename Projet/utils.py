@@ -207,7 +207,6 @@ def inferenceMetrics(net, img_batch, modelName, epoch):
     print("F1 : ", f1(confVec).item())
     printProgressBar(total, total, done="[Inference] Metrics Done !")
 
-
 # to transform a 4 classes one hot encoded matrix in single matrix
 def transformOneHot4CtoSC(tensor):
     return tensor[1] + tensor[2]*2 + tensor[3]*3 # classe 0 = 0 in resultant matrix
@@ -220,7 +219,6 @@ def transformOneHot4CtoPNG(tensor):
 def transformBatchOneHot4CtoPNG(tensor):
     grayNuance = [0, 0.33, 0.66, 1]
     return tensor[:,1]*grayNuance[1] + tensor[:,2]*grayNuance[2] + tensor[:,3]*grayNuance[3] # classe 0 = 0 in resultant matrix
-
 
 def transformBatchOneHot4CtoSC(tensor):
     return tensor[:,1] + tensor[:,2]*2 + tensor[:,3]*3 # classe 0 = 0 in resultant matrix
