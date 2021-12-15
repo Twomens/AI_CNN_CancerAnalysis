@@ -36,12 +36,12 @@ class params():
 #__________________Global Config__________________
 def setParamGlobal(self):
     self.user = 'global'
-    self.net = myNetwork.thomasNet() # à changer
-    self.netName = "Main Model, based on ???"
-    self.batchSize = 8
-    self.batchSizeVal = 4
+    self.net = myNetwork.D_AttU()
+    self.netName = "Double Attention Unet"
+    self.batchSize = 16
+    self.batchSizeVal = 8
     self.learningRate = 0.0001
-    self.nbEpochs = 50
+    self.nbEpochs = 500
     self.augmentDataSet = False
     self.equalize = False
     self.savePNGeachEP = False

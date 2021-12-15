@@ -87,7 +87,7 @@ def runTraining(args):
     print("~~~~~~~~~~~ Creating the CNN model ~~~~~~~~~~")
     #### Create your own model #####
 
-    net = D_AttU()
+    net = args.net
 
     print(" Model Name: {}".format(args.modelName))
 
@@ -193,14 +193,14 @@ def runTraining(args):
                 lr = lr*0.5
                 param_group['lr'] = lr
                 print(' ----------  New learning Rate: {}'.format(lr))
-                
+
         #print('Durée apprentissage epoch : ','%.0f h' % ((time.time() - t0)/3600),
               #'%.0f mins' % (((time.time() - t0)/60)%60), '%2.0f' % ((time.time() - t0)%60),'s')
     #print('Durée total apprentissage : ', '%.0f h' % ((time.time() - tTotal) / 3600),
           #'%.0f mins' % (((time.time() - tTotal) / 60)%60), '%2.0f' % ((time.time() - tTotal)%60), 's')
 
 if __name__ == '__main__':
-    params = params.params("thomas") # either thomas, hadrian, marieme, benjamin or empty for default configuration
+    params = params.params("global") # either thomas, hadrian, marieme, benjamin or empty for default configuration
     parser=argparse.ArgumentParser()
     parser.add_argument('--net',default=params.net,type=float)
     parser.add_argument("--modelName",default=params.netName,type=str)
