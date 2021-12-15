@@ -14,7 +14,7 @@ class params():
             print("Setting Thomas configuration")
             setParamThomas()
         elif(whoseConf.lower() == 'hadrian'):
-            print("Setting Hadrian configuration")
+            print("Setting Hadrien configuration")
             setParamHadrian()
         elif (whoseConf.lower() == 'benjamin'):
             print("Setting Benjamin configuration")
@@ -38,8 +38,8 @@ def setParamThomas(self):
     self.net = myNetwork.thomasNet()
     return
 
-#__________________Hadrian Config__________________
-def setParamHadrian(self):
+#__________________Hadrien Config__________________
+def setParamHadrien(self):
     return
 
 #__________________Benjamin Config__________________

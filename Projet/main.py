@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from progressBar import printProgressBar
-from myNetwork import H_SegNet, thomasNet, thomasUNet,H_small, H_Unet
+from myNetwork import *
 
 import medicalDataLoader
 import argparse
@@ -71,23 +71,21 @@ def runTraining(args):
     print("~~~~~~~~~~~ Creating the CNN model ~~~~~~~~~~")
     #### Create your own model #####
 
-    net = thomasUNet()
-
-
-    #net = H_SegNet()
-    #net = H_small()
-    net = H_Unet()
-
+    net = D_AttU()
+    
     print(" Model Name: {}".format(args.modelName))
 
     print("Total params: {0:,}".format(sum(p.numel() for p in net.parameters() if p.requires_grad)))
 
     #### Loss Initialization ####
     CE_loss = nn.CrossEntropyLoss()
+    Dice_loss = DiceLoss()
+    DiceCE_loss = DiceCELoss()
 
     if torch.cuda.is_available():
         net.cuda()
         CE_loss.cuda()
+        Dice_loss.cuda()
 
     optimizer = torch.optim.Adam(net.parameters(), lr=lr, betas=(0.9, 0.99))
 
@@ -96,6 +94,7 @@ def runTraining(args):
     lossTotalValidation = []
     Best_loss_val = 1000
     BestEpoch = 0
+    flag = True
     print("~~~~~~~~~~~ Starting the training ~~~~~~~~~~")
 
     directory = 'Results/Statistics/' + args.modelName
@@ -117,17 +116,18 @@ def runTraining(args):
             ### From numpy to torch variables
             labels = to_var(labels)
             images = to_var(images)
-
+        
             ################### Train ###################
             #-- The CNN makes its predictions (forward pass) logits
             net_predictions = net(images)
 
             #-- Compute the loss --#
-            segmentation_classes = getTargetSegmentation(labels) #pixel par pixel quelle classe entre 0, 1 ,2, 3
-            CE_loss_value = CE_loss(net_predictions, segmentation_classes) #par indices, comment ca marche avec les inputs? pas claire
-            lossTotal = CE_loss_value
+            DiceCE_loss_value = DiceCE_loss(net_predictions, labels)
 
-            lossTotal.backward()#donne l'erreur, lance la backprop?
+            
+            lossTotal = DiceCE_loss_value #
+
+            lossTotal.backward()
             optimizer.step()
 
             lossEpoch.append(lossTotal.cpu().data.numpy())
@@ -136,7 +136,6 @@ def runTraining(args):
                              length=15,
                              suffix=" Loss: {:.4f}, ".format(lossTotal))
 
-            #### Jose-TIP: Is it the best option to display only the loss value??? ####
 
         lossEpoch = np.asarray(lossEpoch)
         lossEpoch = lossEpoch.mean()#loss final de l'epoch
@@ -154,17 +153,14 @@ def runTraining(args):
         np.save(os.path.join(directory, 'Losses_val.npy'), lossTotalValidation)#ajouter la val loss
 
         ### Save latest model ####
-
-        #### Jose-TIP: Is it the best one??? #### On doit l'ajouter que si la loss (ou val_loss) de ce model est plus petite que l'epoch precedente
         
-        if(loss_val < Best_loss_val):# < pk cross entropy
+        if(loss_val < Best_loss_val):#Sauvegarde le modele si loss plus petit
 
             if not os.path.exists('./models/' + args.modelName):
                 os.makedirs('./models/' + args.modelName)
 
             torch.save(net.state_dict(), './models/' + args.modelName + '/' + str(i) + '_Epoch')#save que le meilleur
 
-            ## besoin de system pour ce rappeler de la meilleur epoch et sauvegarder que si meilleur
             Best_loss_val = loss_val
             BestEpoch = i
 
@@ -172,12 +168,11 @@ def runTraining(args):
         print("###  [VAL]  Best Loss : {:.4f} at epoch {}  ###".format(Best_loss_val, BestEpoch))
         print("###                                                       ###")
 
-        if i % (BestEpoch + 100) == 0 and i>0: #si  ca fait 100 epoch qu'on à pas d'amelioration baisser le lr
+        if i % (BestEpoch + 10) == 0 and i>0: #si  ca fait 10 epoch qu'on à pas d'amelioration baisser le lr
             for param_group in optimizer.param_groups:
                 lr = lr*0.5
                 param_group['lr'] = lr
                 print(' ----------  New learning Rate: {}'.format(lr))
-
 
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
