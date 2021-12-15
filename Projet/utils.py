@@ -5,6 +5,9 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import torchvision
 import os
+
+from imageDataGenerator import savePNG, saveBatchPNG
+from metrics import confVector, batchConfusionMatrix, recall,saveConfMat,precision,accuracy,f1
 from progressBar import printProgressBar
 from os.path import isfile, join
 
@@ -80,13 +83,17 @@ class DiceCELoss(nn.Module):
         return Dice_CE
 
 #fait une inference avec la diceCE loss
-def inference(net, img_batch, modelName, epoch):
+def inference(net, img_batch, modelName, epoch, savePNG):
     total = len(img_batch)
     net.eval()
 
     DiceCE_loss = DiceCELoss().cuda()
 
     losses = []
+
+    confMat = torch.zeros(4, 4, dtype=torch.int64)
+    confVec = torch.zeros(4) # conf vector [TP,TN,FP,FN]
+
     for i, data in enumerate(img_batch):
 
         printProgressBar(i, total, prefix="[Inference] Getting segmentations...", length=30)
@@ -101,6 +108,26 @@ def inference(net, img_batch, modelName, epoch):
         losses.append(DiceCE_loss_value.cpu().data.numpy())
 
 
+        predOH = predToSegmentation(F.softmax(net_predictions, dim=1))
+        labelsOH = getOneHotSegmentation(labels)
+
+        confVec = confVec + confVector(labelsOH,predOH)
+        confMat = confMat + batchConfusionMatrix(
+            transformBatchOneHot4CtoSC(predOH),
+            transformBatchOneHot4CtoSC(labelsOH)
+        )
+
+        if savePNG:
+            saveBatchPNG(F.softmax(net_predictions,dim=1), "Data/val/Pred/epoch_" + str(epoch) + "/", img_names)
+
+
+    saveConfMat(confMat.numpy(),"Data/val/")
+    print("Accuracy : ", accuracy(confMat).item()*100,"%")
+    print("Precision : ", precision(confVec).item()*100,"%")
+    print("Recall : ", recall(confVec).item()*100,"%")
+    print("F1 : ", f1(confVec).item())
+    printProgressBar(total, total, done="[Inference] Metrics Done !")
+
     printProgressBar(total, total, done="[Inference] Segmentation Done !")
 
     losses = np.asarray(losses)
@@ -112,10 +139,8 @@ def inferenceMetrics(net, img_batch, modelName, epoch):
     total = len(img_batch)
     net.eval()
 
-    precision = 0
-    recall = 0
-    F1 = 0
-
+    confMat = torch.zeros(4, 4, dtype=torch.int64)
+    confVec = torch.zeros(4) # conf vector [TP,TN,FP,FN]
     for i, data in enumerate(img_batch):
 
         printProgressBar(i, total, prefix="[Inference] Getting segmentations...", length=30)
@@ -126,32 +151,76 @@ def inferenceMetrics(net, img_batch, modelName, epoch):
 
         net_predictions = net(images)
 
-        p = predToSegmentation(F.softmax(net_predictions, dim=1))
-        truth = getOneHotSegmentation(labels)
+        predOH = predToSegmentation(F.softmax(net_predictions, dim=1))
+        labelsOH = getOneHotSegmentation(labels)
 
-        confusion_vector = torch.divide(p, truth)
-
-        tp = torch.sum(confusion_vector == 1).item()
-        fp = torch.sum(confusion_vector == float('inf')).item()
-        tn = torch.sum(torch.isnan(confusion_vector)).item()
-        fn = torch.sum(confusion_vector == 0).item()
-
-        pre = tp / (tp+fp)
-        precision += pre
-        rec = tp / (tp + fn)
-        recall += rec
-        F1tmp = 2 * (precision * recall) / (precision + recall)
-        F1 += F1tmp
+        confVec = confVec + confVector(labelsOH,predOH)
+        confMat = confMat + batchConfusionMatrix(
+            transformBatchOneHot4CtoSC(predOH),
+            transformBatchOneHot4CtoSC(labelsOH)
+        )
 
 
-    precision = precision / total
-    recall = recall / total
-    F1 = F1 / total
+        # confusion_vector = torch.divide(p, truth)
 
-    print("Precision: "+ str(precision))
-    print("Recall: " + str(recall))
-    print("F1: " + str(F1))
+        # pC = transformBatchOneHot4CtoSC(p)
+        # tC = transformBatchOneHot4CtoSC(truth)
+        # mat = confusionMatrix(tC[1],pC[1])
+        # # test = mat.numpy()
+        #
+        # test = batchConfusionMatrix(tC,pC).numpy()
+        # res = test.sum()
+        # test = test/test.sum()*100
+
+
+
+
+        # tp = torch.sum(confusion_vector == 1).item()
+        # fp = torch.sum(confusion_vector == float('inf')).item()
+        # tn = torch.sum(torch.isnan(confusion_vector)).item()
+        # fn = torch.sum(confusion_vector == 0).item()
+        #
+        # pre = tp / (tp+fp)
+        # precision += pre
+        # rec = tp / (tp + fn)
+        # recall += rec
+        # F1tmp = 2 * (precision * recall) / (precision + recall)
+        # F1 += F1tmp
+
+        saveBatchPNG(F.softmax(net_predictions, dim=1), "Data/val/Pred/epoch_" + str(epoch) + "/", img_names)
+
+
+    # precision = precision / total
+    # recall = recall / total
+    # F1 = F1 / total
+
+    # print("Precision: "+ str(precision))
+    # print("Recall: " + str(recall))
+    # print("F1: " + str(F1))
+
+    # confMatNP = confMat.numpy()
+    # confMatNPPerc = confMatrixPerc(confMat).numpy()
+    saveConfMat(confMat.numpy(),"Data/val/")
+    print("Accuracy : ", accuracy(confMat).item()*100,"%")
+    print("Precision : ", precision(confVec).item()*100,"%")
+    print("Recall : ", recall(confVec).item()*100,"%")
+    print("F1 : ", f1(confVec).item())
     printProgressBar(total, total, done="[Inference] Metrics Done !")
 
 
+# to transform a 4 classes one hot encoded matrix in single matrix
+def transformOneHot4CtoSC(tensor):
+    return tensor[1] + tensor[2]*2 + tensor[3]*3 # classe 0 = 0 in resultant matrix
 
+def transformOneHot4CtoPNG(tensor):
+    grayNuance = [0, 0.33, 0.66, 1]
+    return tensor[1]*grayNuance[1] + tensor[2]*grayNuance[2] + tensor[3]*grayNuance[3] # classe 0 = 0 in resultant matrix
+
+
+def transformBatchOneHot4CtoPNG(tensor):
+    grayNuance = [0, 0.33, 0.66, 1]
+    return tensor[:,1]*grayNuance[1] + tensor[:,2]*grayNuance[2] + tensor[:,3]*grayNuance[3] # classe 0 = 0 in resultant matrix
+
+
+def transformBatchOneHot4CtoSC(tensor):
+    return tensor[:,1] + tensor[:,2]*2 + tensor[:,3]*3 # classe 0 = 0 in resultant matrix

@@ -2,6 +2,7 @@ from __future__ import print_function, division
 import os
 import torch
 import pandas as pd
+from matplotlib import pyplot as plt
 from skimage import io, transform
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
@@ -13,6 +14,8 @@ from random import random, randint
 import warnings
 
 import pdb
+
+from imageDataGenerator import savePNG
 
 warnings.filterwarnings("ignore")
 
@@ -110,9 +113,12 @@ class MedicalImageDataset(Dataset):
 
         if self.augmentation:#augmente nombre de donnée, à faire plus tard
             img, mask = self.augment(img, mask)
+            # torchvision.transforms.AutoAugmentPolicy(value) à tester
+            # torchvision.transforms.RandAugment(
 
-        if self.transform:#met en tensor
+        if self.transform: # met en tensor
             img = self.transform(img)
             mask = self.mask_transform(mask)
+            # savePNG(img, 'Data/val/Prd/', 'test')
 
         return [img, mask, img_path]

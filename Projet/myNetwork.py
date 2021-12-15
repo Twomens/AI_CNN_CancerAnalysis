@@ -116,14 +116,7 @@ class thomasUNet(nn.Module):
 
         return outputs
 
-class thomasNet(nn.Module):
-
-    # torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True,
-    #                 padding_mode='zeros', device=None, dtype=None)
-    # torch.nn.BatchNorm2d(num_features, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True, device=None,
-    #                      dtype=None)
-    # torch.nn.ReLU(inplace=False)
-
+class thomasNet(nn.Module): 
 
     def __init__(self):
         super(thomasNet, self).__init__()
@@ -135,22 +128,22 @@ class thomasNet(nn.Module):
         self.batch1 = nn.BatchNorm2d(10)
         self.act1 = nn.ReLU()
 
-        # CONV 2
+        # # CONV 2
         self.conv2 = nn.Conv2d(10,20,3,padding =1)
         self.batch2 = nn.BatchNorm2d(20)
         self.act2 = nn.ReLU()
-
-        # CONV 3
+        #
+        # # CONV 3
         self.conv3 = nn.Conv2d(20,30,3,padding =1)
         self.batch3 = nn.BatchNorm2d(30)
         self.act3 = nn.ReLU()
-
-        # DECONV 4
+        #
+        # # DECONV 4
         self.conv4 = nn.Conv2d(30,20,3,padding =1)
         self.batch4 = nn.BatchNorm2d(20)
         self.act4 = nn.ReLU()
-
-        # DECONV 5
+        #
+        # # DECONV 5
         self.conv5 = nn.Conv2d(20,10,3,padding =1)
         self.batch5 = nn.BatchNorm2d(10)
         self.act5 = nn.ReLU()
@@ -174,15 +167,15 @@ class thomasNet(nn.Module):
         x = self.conv2(x)
         x = self.batch2(x)
         x = self.act2(x)
-
+        
         x = self.conv3(x)
         x = self.batch3(x)
         x = self.act3(x)
-
+        
         x = self.conv4(x)
         x = self.batch4(x)
         x = self.act4(x)
-
+        
         x = self.conv5(x)
         x = self.batch5(x)
         x = self.act5(x)

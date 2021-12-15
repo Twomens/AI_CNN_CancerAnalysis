@@ -1,14 +1,24 @@
+import time
+
+from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 from torchvision import transforms
+
+from imageDataGenerator import savePNG
+from metrics import confusionMatrix
 from progressBar import printProgressBar
 from myNetwork import *
 
+
 import medicalDataLoader
 import argparse
+import params
 from utils import *
 
 import random
 import torch
+
+
 
 from PIL import Image, ImageOps
 
@@ -17,6 +27,12 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def runTraining(args):
+
+    print('Init metrics : ')
+
+
+    #-------- https://www.kaggle.com/protan/ignite-example ----------
+
     print('-' * 40)
     print('~~~~~~~~  Starting the training... ~~~~~~')
     print('-' * 40)
@@ -43,8 +59,8 @@ def runTraining(args):
                                                       root_dir,
                                                       transform=transform,
                                                       mask_transform=mask_transform,
-                                                      augment=False,
-                                                      equalize=False)
+                                                      augment=args.augmentDataSet,
+                                                      equalize=args.equalize)
 
     train_loader_full = DataLoader(train_set_full,
                               batch_size=batch_size,
@@ -57,13 +73,13 @@ def runTraining(args):
                                                     root_dir,
                                                     transform=transform,
                                                     mask_transform=mask_transform,
-                                                    equalize=False)
+                                                    equalize=args.equalize)
 
     val_loader = DataLoader(val_set,
                             batch_size=batch_size_val,
                             worker_init_fn=np.random.seed(0),
                             num_workers=0,
-                            shuffle=False)
+                            shuffle=args.equalize)
 
     # Initialize
     num_classes = args.num_classes
@@ -72,7 +88,7 @@ def runTraining(args):
     #### Create your own model #####
 
     net = D_AttU()
-    
+
     print(" Model Name: {}".format(args.modelName))
 
     print("Total params: {0:,}".format(sum(p.numel() for p in net.parameters() if p.requires_grad)))
@@ -102,7 +118,9 @@ def runTraining(args):
     if os.path.exists(directory)==False:
         os.makedirs(directory)
 
+    tTotal = time.time()
     for i in range(epoch):
+        t0 = time.time()
         net.train()
         lossEpoch = []
         num_batches = len(train_loader_full)
@@ -127,7 +145,7 @@ def runTraining(args):
             
             lossTotal = DiceCE_loss_value #
 
-            lossTotal.backward()
+            lossTotal.backward()#donne l'erreur, lance la backprop?
             optimizer.step()
 
             lossEpoch.append(lossTotal.cpu().data.numpy())
@@ -144,8 +162,10 @@ def runTraining(args):
 
         printProgressBar(num_batches, num_batches,
                              done="[Training] Epoch: {}, LossG: {:.4f}".format(i,lossEpoch))
-
-        loss_val = inference(net, val_loader, args.modelName, i)#compute la val loss
+        if i == epoch-1:
+            loss_val = inference(net, val_loader, args.modelName, i, True)#compute la val loss
+        else:
+            loss_val = inference(net, val_loader, args.modelName, i, args.savePNGeachEP)  # compute la val loss
         lossTotalValidation.append(loss_val)#save les val loss
 
 
@@ -173,14 +193,25 @@ def runTraining(args):
                 lr = lr*0.5
                 param_group['lr'] = lr
                 print(' ----------  New learning Rate: {}'.format(lr))
+                
+        #print('Durée apprentissage epoch : ','%.0f h' % ((time.time() - t0)/3600),
+              #'%.0f mins' % (((time.time() - t0)/60)%60), '%2.0f' % ((time.time() - t0)%60),'s')
+    #print('Durée total apprentissage : ', '%.0f h' % ((time.time() - tTotal) / 3600),
+          #'%.0f mins' % (((time.time() - tTotal) / 60)%60), '%2.0f' % ((time.time() - tTotal)%60), 's')
 
 if __name__ == '__main__':
+    params = params.params("thomas") # either thomas, hadrian, marieme, benjamin or empty for default configuration
     parser=argparse.ArgumentParser()
-    parser.add_argument("--modelName",default="Test_Model",type=str)
-    parser.add_argument('--batch_size',default=8,type=int)
-    parser.add_argument('--batch_size_val',default=4,type=int)
+    parser.add_argument('--net',default=params.net,type=float)
+    parser.add_argument("--modelName",default=params.netName,type=str)
+    parser.add_argument('--batch_size',default=params.batchSize,type=int)
+    parser.add_argument('--batch_size_val',default=params.batchSizeVal,type=int)
     parser.add_argument('--num_classes',default=4,type=int)
-    parser.add_argument('--epochs',default=50,type=int)
-    parser.add_argument('--lr',default=0.0001,type=float)
+    parser.add_argument('--epochs',default=params.nbEpochs,type=int)
+    parser.add_argument('--lr',default=params.learningRate,type=float)
+    parser.add_argument('--augmentDataSet',default=params.augmentDataSet,type=bool)
+    parser.add_argument('--equalize',default=params.equalize,type=bool)
+    parser.add_argument('--savePNGeachEP',default=params.equalize,type=bool)
     args=parser.parse_args()
+
     runTraining(args)

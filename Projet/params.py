@@ -1,41 +1,66 @@
-from sympy.strategies.core import switch
-
-#__________________List Parameters__________________
 import myNetwork
-
 
 class params():
     user = None # to specify the network we'll use
     net = None
+    netName = None
+    # hyperparameters
+    batchSize = None
+    batchSizeVal = None
+    learningRate = None
+    nbEpochs = None
+    augmentDataSet = False
+    equalize = False
+    savePNGeachEP = False
 
-    def __init__(whoseConf,self):
+
+    def __init__(self, whoseConf):
         user = whoseConf.lower()
-        if(whoseConf.lower() == 'thomas'):
+        if(user == 'thomas'):
             print("Setting Thomas configuration")
-            setParamThomas()
-        elif(whoseConf.lower() == 'hadrian'):
+            setParamThomas(self)
+        elif(user == 'hadrien'):
             print("Setting Hadrien configuration")
-            setParamHadrian()
-        elif (whoseConf.lower() == 'benjamin'):
+            setParamHadrian(self)
+        elif (user == 'benjamin'):
             print("Setting Benjamin configuration")
-            setParamBenjamin()
-        elif (whoseConf.lower() == 'marieme'):
+            setParamBenjamin(self)
+        elif (user == 'marieme'):
             print("Setting Marieme configuration")
-            setParamMarieme()
+            setParamMarieme(self)
         else:
             print("Setting Global configuration")
-            setParamGlobal()
+            setParamGlobal(self)
 
 
 #__________________Global Config__________________
 def setParamGlobal(self):
     self.user = 'global'
+    self.net = myNetwork.thomasNet() # à changer
+    self.netName = "Main Model, based on ???"
+    self.batchSize = 8
+    self.batchSizeVal = 4
+    self.learningRate = 0.0001
+    self.nbEpochs = 50
+    self.augmentDataSet = False
+    self.equalize = False
+    self.savePNGeachEP = False
     return
 
 #__________________Thomas Config__________________
 def setParamThomas(self):
+    # à essayer
+    # https: // github.com / deepmind / surface - distance / blob / master / surface_distance_test.py
     self.user = 'thomas'
-    self.net = myNetwork.thomasNet()
+    self.net = myNetwork.D_AttU()
+    self.netName = "Thomas Model, based on U-Net"
+    self.batchSize = 32 # ou 8 ? à tester
+    self.batchSizeVal = 4
+    self.learningRate = 0.001 # essayer d'augmenter la taille du batch et du lr
+    self.nbEpochs = 2 # 30
+    self.augmentDataSet = False
+    self.equalize = False
+    self.savePNGeachEP = True
     return
 
 #__________________Hadrien Config__________________
